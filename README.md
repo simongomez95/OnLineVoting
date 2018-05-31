@@ -57,3 +57,10 @@ RESPONSE_BODY : {
 - En /Identifier/src/main/resources/application.properties cambiar las propiedades de Postgress por las de la base de datos (URL, user, password, etc)
 
 - Tambien se debe comentar en /Identifier/pom.xml el XML que contiene el artefacto H2 y descomentar el XML que contiene el artefacto Postgress
+
+### Run
+
+Para correr el aplicativo es necesario tener instalado java 1.8 o superior. 
+Tambien es necesario tener Apache Maven instalado en el equipo y para correr el aplicativo se debe correr el siguiente comando
+
+``` #mvn spring-boot:run ```
