@@ -1,4 +1,5 @@
 import requests
+import flask
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
@@ -14,7 +15,7 @@ def recibir():
     response = requests.post(endpoint_identificador, data={'id': 12524})
     nonce_encriptado = response.form['nonce']
     nonce = desencriptar(nonce_encriptado)
-    voto = voto ^ nonce
+    voto = voto ^ nonce #xor
     guardar_voto(voto)
 
 def desencriptar(cifrado):
