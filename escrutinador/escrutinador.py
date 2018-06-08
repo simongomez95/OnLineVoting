@@ -1,53 +1,71 @@
-#!/usr/bin/env python3
+import requests
+import flask
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
-import json
-import http.client
-import urllib.request
+endpoint_identificador = 'http://algo.com/endpoint'
+endpoint_jurado = 'http://algo.com/endpoint'
+priv_key=None
 
-def jsonMessages():
+@app.route('/escrutinador', 'POST')
+def recibir():
+    id_cifrado = request.form['id']
+    voto_cifrado = request.form['voto']
+    voto = descifrar(voto_cifrado)
+    id = descifrar(id_cifrado)
+    response = requests.post(endpoint_identificador, data={'id': 12524})
+    nonce_cifrado = response.form['nonce']
+    nonce = descifrar(nonce_cifrado)
+    voto = voto ^ nonce #xor
+    guardar_voto(voto) 
 
-    machine = 'http://httpbin.org/post'
-    secretKey = {"con1":40, "con2":20}                                                                             # Create keys in json format
-    params = json.dumps(secretKey).encode('ISO-8859-1')                                                            # Encode and send json key
-    req = urllib.request.Request(machine, data=params, headers={'content-type': 'application/json'})               
-    response = urllib.request.urlopen(req)                                                                         # Get response 
-    print(response.read().decode('ISO-8859-1'))                                                                    # Read response
+def send():                        # NEED HEALING, no sé si es así XD, la ide es enviar la llave publica
+    pub_key = create_keys_RSA() 
+    requests.post(endpoint_jurado, data={'pub_key': pub_key})
 
-def getRequest():
-    connection = http.client.HTTPSConnection('http://httpbin.org/post')                                            # Machine to connect to (IP or URL)
-    connection.request("GET", "/")
-    answer1 = connection.getresponse()
+def cargar_clave():
+    with open(archivo_clave_privada, "rb") as key_file:
+        key = serialization.load_pem_private_key(
+            key_file.read(),
+            password=None,
+            backend=default_backend()
+        )
+        return key
 
-def postRequest():
-    pass
+######################################## CHARLIE - MANU #####################################
+
+def create_keys_RSA(bits=2048):
+    new_key = rsa.generate_private_key(
+          public_exponent=65537,
+          key_size=bits,
+          backend=default_backend()
+    )
+    private_key = new_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+    public_key = new_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
     
-def publicDecipher():
-    pass
+    self.priv_key = private_key
+    return public_key
 
-def nonce():
-    pass
+def jury(encrypted_vote):
+    scrutator_vote = decypher(encrypted_vote, priv_key) 
+    vote = decypher(scrutator_vote, jury_pubkey)
 
-def calcXor():
-    pass
-
-def privateDecipher():
-    pass
-
-def voteCount():
-    pass
-
-def main():
-    jsonMessages()
-    publicDecipher()
-    nonce()
-    calcXor()
-    privateDecipher()
-    voteCount()
-
+def decypher(cypher, key):
+    message = key.decrypt(cypher, 
+    padding.OAEP(
+        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        algorithm=hashes.SHA256(),
+        label=None
+    ))
+    return message
+    
 if __name__ == "__main__":
-    main()
-
-
-
-
-# USAR ISO-8859-1 PARA LOS JSON
+    create_keys_RSA()
