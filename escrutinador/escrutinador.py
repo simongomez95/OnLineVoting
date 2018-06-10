@@ -1,71 +1,67 @@
-import requests
 import flask
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+import Crypto
+import requests
+from Crypto.PublicKey import RSA
+from Crypto import Random
 
 endpoint_identificador = 'http://algo.com/endpoint'
 endpoint_jurado = 'http://algo.com/endpoint'
-priv_key=None
-
-@app.route('/escrutinador', 'POST')
-def recibir():
-    id_cifrado = request.form['id']
-    voto_cifrado = request.form['voto']
-    voto = descifrar(voto_cifrado)
-    id = descifrar(id_cifrado)
-    response = requests.post(endpoint_identificador, data={'id': 12524})
-    nonce_cifrado = response.form['nonce']
-    nonce = descifrar(nonce_cifrado)
-    voto = voto ^ nonce #xor
-    guardar_voto(voto) 
-
-def send():                        # NEED HEALING, no sé si es así XD, la ide es enviar la llave publica
-    pub_key = create_keys_RSA() 
-    requests.post(endpoint_jurado, data={'pub_key': pub_key})
-
-def cargar_clave():
-    with open(archivo_clave_privada, "rb") as key_file:
-        key = serialization.load_pem_private_key(
-            key_file.read(),
-            password=None,
-            backend=default_backend()
-        )
-        return key
-
-######################################## CHARLIE - MANU #####################################
-
-def create_keys_RSA(bits=2048):
-    new_key = rsa.generate_private_key(
-          public_exponent=65537,
-          key_size=bits,
-          backend=default_backend()
-    )
-    private_key = new_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
-    )
-    public_key = new_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    )
-    
-    self.priv_key = private_key
-    return public_key
-
-def jury(encrypted_vote):
-    scrutator_vote = decypher(encrypted_vote, priv_key) 
-    vote = decypher(scrutator_vote, jury_pubkey)
+votos = []
+def cargar_clave(keyfile):
+    fd = open(keyfile, "rb")
+    key = fd.read()
+    fd.close()
+    return RSA.importKey(key)
 
 def decypher(cypher, key):
-    message = key.decrypt(cypher, 
-    padding.OAEP(
-        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        algorithm=hashes.SHA256(),
-        label=None
-    ))
+    message = key.decrypt(cypher)
     return message
+
+def verify(msg, pubkey, signature): 
+    return pubkey.verify(msg, signature)
+
+
+def guardar_voto(voto_caso):
+    base = pow(2,32)
+    porcion = int(base/6)
+    if 0 <= voto_caso <= porcion-1:
+        voto[0]+= 1
+    elif porcion<= voto_caso <= (porcion*2)-1 :
+        voto[1] += 1
+    elif (porcion*2) <= voto_caso <= (porcion*3)-1 :
+        voto[2]+=1
+    elif porcion*3 <= voto_caso <= porcion*4-1 :
+        voto[3]+=1
+    elif porcion*4 <= voto_caso <= porcion*5-1 :
+        voto[4]+=1
+    elif porcion*5 <= voto_caso <= porcion*6-1:
+        voto[5]+=1
+    elif porcion*6 <= voto_caso <= ((porcion * 6) + (base%6)):
+        voto[6]+=1
+
+
+
+@app.route('/escrutinador', methods=['POST'])
+def recibir():
+    priv_key= cargar_clave(priv_key_file)
+    jury_pub = cargar_clave(jury_key_file)
+
+    json_recibido = request.get_json(force=True)
+    id_cifrado = json_recibido.get('id')
+    voto_cifrado = json_recibido.get('voto')
+    signature = json_recibido.get('firma')
+    if(not verify(voto_cifrado, jury_pub, signature)):
+        print("Firma invalida")
+
+    vote = decypher(voto_cifrado, priv_key)
+
+    identificador = decypher(id_cifrado, priv_key)
+
+    response = requests.post(endpoint_identificador, data={'id': identificador}, headers={'content-type': 'application/json'})
+    nonce_cifrado = json_recibido.get('nonce')
+    nonce = decypher(nonce_cifrado, priv_key)
+    voto = voto ^ nonce #xor
+    guardar_voto(vote)
     
 if __name__ == "__main__":
-    create_keys_RSA()
+    app.run(host='0.0.0.0', debug=True)
