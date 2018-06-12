@@ -1,0 +1,57 @@
+services:
+  web:
+    image: tiangolo/uwsgi-nginx-flask:python2.7
+    command: "bash run.sh"
+    ports:
+      - "80:80"
+      - "5000:5000"
+    links:
+      - db
+      # - redis
+    volumes:
+      - .:/app
+#    - c:/users/yolas/workbench/instabot/:/app
+  # db:
+  #   image: mongo
+  #   volumes:
+  #     - ./data:/data/db
+version: '2'
+
+# redis:
+#   image: redis:3.2
+#   volumes:
+#     - .:/app
+# #    - c:/users/yolas/workbench/instabot/:/app
+# celery:
+#   build: .
+#   command: celery worker -A celery_config -l info -c 2
+#   links:
+#     - db
+#     - redis
+#   volumes:
+#     - .:/app
+# #    - c:/users/yolas/workbench/instabot/:/app
+
+#web:
+#  image: simongomez95/instabot:latest
+#  ports:
+#    - "80:80"
+#  links:
+#    - db
+#    - redis
+#db:
+#  image: mongo
+#  volumes:
+#    - ./data/mongodb:/data/db
+#
+#redis:
+#  image: redis:3.2
+#  volumes:
+#    - .:/app
+#
+#celery:
+#  image: simongomez95/instabot:latest
+#  command: celery worker -A celery_config -l info -c 2
+#  links:
+#    - db
+#    - redis
