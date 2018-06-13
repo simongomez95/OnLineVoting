@@ -51,14 +51,14 @@ def guardar_voto(voto_caso):
 @app.route('/escrutinador', methods=['POST'])
 def recibir():
     priv_key= cargar_clave(priv_key_file)
-    jury_pub = cargar_clave(jury_key_file)
-    
+    # jury_pub = cargar_clave(jury_key_file)
+
     json_recibido = request.get_json(force=True)
     id_cifrado = json_recibido.get('id')
     voto_cifrado = json_recibido.get('voto')
     signature = json_recibido.get('firma')
-    if(not verify(voto_cifrado, jury_pub, signature)):
-        print("Firma invalida")
+    # if(not verify(voto_cifrado, jury_pub, signature)):
+    #     print("Firma invalida")
 
     vote = decypher(voto_cifrado, priv_key)
 
